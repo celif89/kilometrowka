@@ -1,4 +1,4 @@
-import { Building2, CarFront, DatabaseBackup, Download, FileSpreadsheet, Pencil, Plus, Sparkles, Trash2, Upload } from "lucide-react";
+import { Building2, CarFront, DatabaseBackup, Download, FileSpreadsheet, Gauge, Pencil, Plus, Sparkles, Trash2, Upload, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { APP_VERSION } from "../changelog";
@@ -6,18 +6,21 @@ import { Badge, Card, Field, Modal, Notice, NumberInput, PageHeader, Spinner, us
 import { todayLocal } from "../engine/dates";
 import { buildLedger, samePlace } from "../engine/ledger";
 import type { Vehicle } from "../engine/types";
-import { type Backup, deleteVehicle, replaceVehicleData, restoreBackup, saveRoute, saveSettings, saveVehicle } from "../lib/data";
+import { type Backup, closeMonth, deleteVehicle, replaceVehicleData, restoreBackup, saveRoute, saveSettings, saveVehicle } from "../lib/data";
 import { placeKey, useData } from "../lib/DataContext";
 import { type ImportResult, parseWorkbook } from "../lib/excelImport";
 import { downloadBlob } from "../lib/exportXlsx";
+import { supabase } from "../lib/supabase";
 import { dayLabel, km, monthName, num, trips as tripsWord } from "../lib/format";
 
 type VehicleDraft = Omit<Vehicle, "id"> & { id?: number };
 
 export function SettingsPage() {
-  const { data, company, reload } = useData();
+  const { data, company, reload, fvVehicleId } = useData();
   const { busy, run } = useAction(reload);
   const location = useLocation();
+  const [email, setEmail] = useState<string | null>(null);
+  useEffect(() => { void supabase.auth.getSession().then(({ data: d }) => setEmail(d.session?.user.email ?? null)); }, []);
   const [firm, setFirm] = useState(company);
   const [driver, setDriver] = useState(data?.settings.default_driver ?? "");
   const [veh, setVeh] = useState<VehicleDraft | null>(null);
@@ -101,6 +104,33 @@ export function SettingsPage() {
         </Card>
       </div>
 
+      {data.fvMileage.length > 0 && (
+        <Card title="Przebieg z FV Meter" icon={<Gauge className="size-4" />}
+          subtitle="Odczyty przebiegu wpisywane w FV Meter (zakładka Samochód) trafiają do kontroli licznika – nie trzeba ich przepisywać.">
+          <div className="flex flex-wrap items-end gap-4">
+            <Field label="Pojazd" className="min-w-56">
+              <select className="input" value={fvVehicleId ?? "none"} disabled={busy}
+                onChange={(e) => run(() => saveSettings({ fvmeter_vehicle: e.target.value }), "Zapisano")}>
+                {data.vehicles.map((v) => <option key={v.id} value={v.id}>{v.name} ({v.plate})</option>)}
+                <option value="none">nie pobieraj</option>
+              </select>
+            </Field>
+            {(() => {
+              const last = [...data.fvMileage].filter((m) => m.km > 0).at(-1);
+              return last && <p className="pb-3 text-sm text-slate-500">{num(data.fvMileage.filter((m) => m.km > 0).length)} odczytów, ostatni {dayLabel(last.day)}: <b className="text-slate-700 dark:text-slate-200">{km(last.km)}</b></p>;
+            })()}
+          </div>
+        </Card>
+      )}
+
+      <Card title="Konta" icon={<Users className="size-4" />}>
+        <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+          <p>Zalogowano jako <b>{email ?? "…"}</b>. Każde konto ma własne, oddzielne dane: pojazdy, przejazdy, trasy i dane firmy.</p>
+          <p>Konto dla drugiej osoby (np. żony z jej autem) zakładasz w Supabase: <b>Authentication → Users → Add user → Create new user</b>
+            {" "}(e-mail, hasło, zaznacz „Auto Confirm User”). Ta osoba loguje się pod tym samym adresem aplikacji i nie widzi Twoich danych ani danych FV Meter.</p>
+        </div>
+      </Card>
+
       <Card title="O aplikacji" icon={<Sparkles className="size-4" />}>
         <div className="flex flex-wrap items-center justify-between gap-3 text-sm">
           <span>Kilometrówka <span className="font-mono font-semibold">v{APP_VERSION}</span></span>
@@ -145,11 +175,16 @@ function ExcelImport() {
   const [file, setFile] = useState<string | null>(null);
   const [res, setRes] = useState<ImportResult | null>(null);
   const [err, setErr] = useState<string | null>(null);
-  const [withReadings, setWithReadings] = useState(true);
+  const [withReadingsRaw, setWithReadings] = useState(true);
   const [withCompany, setWithCompany] = useState(true);
+  // z FV Meter przychodzi prawidłowy przebieg – wtedy liczby z K–L domyślnie pomijamy
+  const [withReadingsSet, setWithReadingsSet] = useState(false);
+  const [closePast, setClosePast] = useState(true);
   const [progress, setProgress] = useState<string | null>(null);
   if (!data) return null;
   const app = data;
+  const withReadings = withReadingsSet ? withReadingsRaw : app.fvMileage.length === 0;
+  const pastMonths = res ? res.months.filter((m) => m < todayLocal().slice(0, 7)) : [];
   const existing = res ? app.vehicles.find((v) => v.plate.replace(/\s/g, "").toUpperCase() === res.vehicle.plate.replace(/\s/g, "").toUpperCase()) : undefined;
   const end = res ? (() => {
     const v = { id: 0, name: "", plate: "", start_date: res.vehicle.start_date ?? "", start_odometer: res.vehicle.start_odometer ?? 0, end_date: null, default_driver: null, active: true };
@@ -195,6 +230,10 @@ function ExcelImport() {
         });
       }
       await saveSettings(settings);
+      if (closePast) {
+        setProgress("Zatwierdzanie miesięcy…");
+        for (const m of pastMonths) await closeMonth(vehicleId, m);
+      }
     }, `Przeniesiono ${tripsWord(r.trips.length)}`);
     setProgress(null);
     if (ok) { setRes(null); setFile(null); }
@@ -237,8 +276,13 @@ function ExcelImport() {
             </Notice>
           )}
           <div className="space-y-2 text-sm">
-            <label className="flex items-start gap-2"><input type="checkbox" className="mt-0.5 size-4 accent-brand-600" checked={withReadings} onChange={(e) => setWithReadings(e.target.checked)} />
-              <span>Liczby z kolumn K–L wczytaj jako faktyczne odczyty licznika ({res.readings.length}) – do kontroli w Raportach</span></label>
+            <label className="flex items-start gap-2"><input type="checkbox" className="mt-0.5 size-4 accent-brand-600" checked={withReadings} onChange={(e) => { setWithReadingsSet(true); setWithReadings(e.target.checked); }} />
+              <span>Liczby z kolumn K–L wczytaj jako faktyczne odczyty licznika ({res.readings.length}) – do kontroli w Raportach
+                {app.fvMileage.length > 0 && <span className="block text-xs text-slate-500">Przebieg pobiera się już z FV Meter, więc zwykle nie jest to potrzebne.</span>}</span></label>
+            {pastMonths.length > 0 && (
+              <label className="flex items-start gap-2"><input type="checkbox" className="mt-0.5 size-4 accent-brand-600" checked={closePast} onChange={(e) => setClosePast(e.target.checked)} />
+                <span>Oznacz {pastMonths.length === 1 ? "zakończony miesiąc" : `${pastMonths.length} zakończonych miesięcy`} ({monthName(pastMonths[0], true)} – {monthName(pastMonths.at(-1)!, true)}) jako zatwierdzone – były już drukowane i podpisane w Excelu</span></label>
+            )}
             <label className="flex items-start gap-2"><input type="checkbox" className="mt-0.5 size-4 accent-brand-600" checked={withCompany} onChange={(e) => setWithCompany(e.target.checked)} />
               <span>Zapisz dane firmy z nagłówka arkusza</span></label>
           </div>

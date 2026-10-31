@@ -1,4 +1,5 @@
 // Odczyt i zapis danych w Supabase (tabele km_*).
+import type { FvMileage } from "../engine/fvmeter";
 import type { MonthClose, NewTrip, OdometerReading, Route, Template, Trip, Vehicle } from "../engine/types";
 import { supabase } from "./supabase";
 
@@ -10,6 +11,8 @@ export interface AppData {
   readings: OdometerReading[];
   closes: MonthClose[];
   settings: Record<string, string>;
+  /** przebieg z FV Meter (pusta lista, gdy brak tabeli albo konto nie ma do niej dostępu) */
+  fvMileage: FvMileage[];
 }
 
 function check<T>(res: { data: T | null; error: { message: string } | null }): T {
@@ -24,8 +27,9 @@ async function fetchAll<T>(table: string, order: string[]): Promise<T[]> {
   for (let from = 0; ; from += page) {
     let q = supabase.from(table).select("*");
     for (const col of order) q = q.order(col);
-    const rows = check(await q.range(from, from + page - 1)) as T[];
-    out.push(...rows);
+    const rows = check(await q.range(from, from + page - 1)) as (T & { user_id?: string })[];
+    // user_id ustawia baza (każde konto ma własne dane) – w aplikacji niepotrzebne
+    out.push(...rows.map(({ user_id: _u, ...r }) => r as T));
     if (rows.length < page) return out;
   }
 }
@@ -33,7 +37,7 @@ async function fetchAll<T>(table: string, order: string[]): Promise<T[]> {
 const n = (v: unknown) => (v === null || v === undefined ? v : Number(v));
 
 export async function loadAll(): Promise<AppData> {
-  const [vehicles, routes, templates, trips, readings, closes, settings] = await Promise.all([
+  const [vehicles, routes, templates, trips, readings, closes, settings, fvMileage] = await Promise.all([
     fetchAll<Vehicle>("km_vehicles", ["id"]),
     fetchAll<Route>("km_routes", ["position", "id"]),
     fetchAll<Template>("km_templates", ["position", "id"]),
@@ -41,6 +45,7 @@ export async function loadAll(): Promise<AppData> {
     fetchAll<OdometerReading>("km_odometer", ["day", "id"]),
     fetchAll<MonthClose>("km_month_close", ["month"]),
     fetchAll<{ key: string; value: string }>("km_settings", ["key"]),
+    fetchAll<FvMileage>("mileage", ["day"]).catch(() => [] as FvMileage[]),
   ]);
   return {
     vehicles: vehicles.map((v) => ({ ...v, start_odometer: Number(v.start_odometer) })),
@@ -50,6 +55,7 @@ export async function loadAll(): Promise<AppData> {
     readings: readings.map((r) => ({ ...r, km: Number(r.km) })),
     closes,
     settings: Object.fromEntries(settings.map((s) => [s.key, s.value ?? ""])),
+    fvMileage: fvMileage.map((m) => ({ day: m.day, km: Number(m.km) })),
   };
 }
 
@@ -145,7 +151,7 @@ export async function reopenMonth(vehicleId: number, month: string) {
 
 export async function saveSettings(values: Record<string, string>) {
   check(await supabase.from("km_settings").upsert(
-    Object.entries(values).map(([key, value]) => ({ key, value })), { onConflict: "key" },
+    Object.entries(values).map(([key, value]) => ({ key, value })), { onConflict: "user_id,key" },
   ));
 }
 
@@ -191,7 +197,7 @@ export async function restoreBackup(b: Backup) {
   await insertTrips(d.trips.map(({ id: _id, ...t }) => ({
     ...t, vehicle_id: vehicleIds.get(t.vehicle_id)!, route_id: t.route_id ? routeIds.get(t.route_id) ?? null : null,
   })).filter((t) => t.vehicle_id));
-  await inChunks(d.readings.map(({ id: _id, ...r }) => ({ ...r, vehicle_id: vehicleIds.get(r.vehicle_id)! }))
+  await inChunks(d.readings.filter((r) => !r.source).map(({ id: _id, source: _s, ...r }) => ({ ...r, vehicle_id: vehicleIds.get(r.vehicle_id)! }))
     .filter((r) => r.vehicle_id), 500, async (chunk) => { check(await supabase.from("km_odometer").insert(chunk)); });
   for (const c of d.closes) {
     const vid = vehicleIds.get(c.vehicle_id);

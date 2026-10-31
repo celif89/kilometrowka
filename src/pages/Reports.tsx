@@ -50,7 +50,7 @@ function TopList({ rows }: { rows: { label: React.ReactNode; key: string; value:
 }
 
 export function ReportsPage() {
-  const { data, vehicle, months, ledger, checks, company, reload } = useData();
+  const { data, vehicle, months, ledger, checks, company, reload, fvVehicleId } = useData();
   const { busy, run } = useAction(reload);
   const location = useLocation();
   const years = useMemo(() => [...new Set(months.map((m) => m.month.slice(0, 4)))], [months]);
@@ -145,7 +145,9 @@ export function ReportsPage() {
 
       <div id="licznik" className="scroll-mt-24">
         <Card title="Kontrola licznika" icon={<Gauge className="size-4" />}
-          subtitle="Wpisz faktyczny stan licznika (np. z aplikacji auta, przeglądu, faktury serwisowej). Aplikacja porówna go z sumą kilometrów w ewidencji.">
+          subtitle={fvVehicleId === vehicle.id
+            ? "Przebieg wpisywany w FV Meter (zakładka Samochód) pobiera się tu sam. Możesz też dopisać odczyt ręcznie."
+            : "Wpisz faktyczny stan licznika (np. z aplikacji auta, przeglądu, faktury serwisowej). Aplikacja porówna go z sumą kilometrów w ewidencji."}>
           <div className="grid gap-3 rounded-2xl bg-slate-50 p-4 sm:grid-cols-[10rem_10rem_1fr_auto] sm:items-end dark:bg-white/[0.03]">
             <Field label="Data"><input type="date" className="input" value={reading.day} onChange={(e) => setReading({ ...reading, day: e.target.value })} /></Field>
             <Field label="Stan licznika"><NumberInput value={reading.km} onChange={(v) => setReading({ ...reading, km: v })} suffix="km" /></Field>
@@ -189,9 +191,9 @@ export function ReportsPage() {
                       <td className="text-right font-semibold tnum">{num(c.reading.km)}</td>
                       <td className="text-right text-slate-500 tnum">{num(c.computed)}</td>
                       <td className={cx("text-right font-semibold tnum", Math.abs(c.diff) >= 50 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400")}>{signedKm(c.diff)}</td>
-                      <td className="text-xs text-slate-500">{c.reading.note}</td>
+                      <td className="text-xs text-slate-500">{c.reading.source === "fvmeter" ? <Badge tone="brand">FV Meter</Badge> : c.reading.note}</td>
                       <td className="text-right">
-                        <button className="btn btn-danger btn-icon size-8" disabled={busy} onClick={() => window.confirm("Usunąć odczyt?") && run(() => deleteReading(c.reading.id), "Usunięto odczyt")} aria-label="Usuń"><Trash2 className="size-3.5" /></button>
+                        {!c.reading.source && <button className="btn btn-danger btn-icon size-8" disabled={busy} onClick={() => window.confirm("Usunąć odczyt?") && run(() => deleteReading(c.reading.id), "Usunięto odczyt")} aria-label="Usuń"><Trash2 className="size-3.5" /></button>}
                       </td>
                     </tr>
                   ))}

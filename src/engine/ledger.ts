@@ -99,7 +99,8 @@ export interface OdometerCheck {
 
 export function odometerChecks(vehicle: Vehicle, ledger: LedgerTrip[], readings: OdometerReading[]): OdometerCheck[] {
   return readings
-    .filter((r) => r.vehicle_id === vehicle.id)
+    // odczyty sprzed rozpoczęcia ewidencji (np. 0 km w dniu zakupu) nie mają z czym się porównać
+    .filter((r) => r.vehicle_id === vehicle.id && r.day >= vehicle.start_date)
     .sort((a, b) => (a.day < b.day ? -1 : a.day > b.day ? 1 : a.id - b.id))
     .map((reading) => {
       const computed = odometerAt(vehicle, ledger, reading.day);

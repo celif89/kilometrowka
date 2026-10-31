@@ -1,5 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { buildLedger, continuityGaps, type LedgerTrip, monthSummaries, type MonthSummary, odometerChecks, type OdometerCheck } from "../engine/ledger";
+import { fvMeterReadings, fvMeterVehicleId } from "../engine/fvmeter";
+import { monthToClose } from "../engine/reminders";
 import type { Company, Vehicle } from "../engine/types";
 import { type AppData, loadAll } from "./data";
 
@@ -20,6 +22,10 @@ interface DataState {
   /** własne nazwy miejsc, np. „Miasteczko, ul. Prosta 1” → „Dom” */
   placeLabels: Record<string, string>;
   placeLabel: (address: string) => string | null;
+  /** pojazd, do którego trafia przebieg z FV Meter (null = brak połączenia) */
+  fvVehicleId: number | null;
+  /** poprzedni miesiąc do wydruku i zatwierdzenia (przypomnienie od 1. dnia miesiąca) */
+  reminder: MonthSummary | null;
 }
 
 export const placeKey = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
@@ -87,10 +93,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const ledger = data && vehicle ? buildLedger(vehicle, data.trips) : [];
     const settings = data?.settings ?? {};
     const placeLabels = parseLabels(settings.place_labels);
+    const fvVehicleId = data?.fvMileage.length ? fvMeterVehicleId(settings, vehicles) : null;
+    const readings = data ? [...data.readings, ...fvMeterReadings(data.fvMileage, fvVehicleId)] : [];
+    const months = data && vehicle ? monthSummaries(vehicle, ledger, data.closes) : [];
     return {
       data, loading, error, reload, vehicle, setVehicleId, ledger,
-      months: data && vehicle ? monthSummaries(vehicle, ledger, data.closes) : [],
-      checks: data && vehicle ? odometerChecks(vehicle, ledger, data.readings) : [],
+      months,
+      checks: data && vehicle ? odometerChecks(vehicle, ledger, readings) : [],
+      fvVehicleId,
+      reminder: monthToClose(months),
       gaps: continuityGaps(ledger),
       company: companyFrom(settings),
       defaultDriver: vehicle?.default_driver || settings.default_driver || "",

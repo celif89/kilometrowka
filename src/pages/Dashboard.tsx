@@ -1,6 +1,7 @@
 import { CalendarDays, ChevronLeft, ChevronRight, FileSpreadsheet, Layers, Lock, MapPin, Plus, Repeat, Route as RouteIcon, Settings2} from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import { MonthReminder } from "../components/MonthReminder";
 import { DayTimeline, nextSeq, Place, RouteChip, type TripDraft, TripForm, tripFromRoute } from "../components/trips";
 import { Badge, Card, cx, EmptyState, Modal, Notice, useAction } from "../components/ui";
 import { addDays, monthOf, todayLocal, weekday } from "../engine/dates";
@@ -9,7 +10,7 @@ import { suggestRoutes } from "../engine/suggest";
 import type { Route } from "../engine/types";
 import { deleteTrips, insertTrips, reorderTrips } from "../lib/data";
 import { useData } from "../lib/DataContext";
-import { dayLabel, dayLong, km, monthName, num, plural, signedKm, trips as tripsWord, WEEKDAYS_SHORT } from "../lib/format";
+import { dayLabel, dayLong, km, monthName, num, signedKm, trips as tripsWord, WEEKDAYS_SHORT } from "../lib/format";
 
 function Odometer({ value }: { value: number }) {
   const digits = String(Math.round(value)).padStart(6, "0").split("");
@@ -94,7 +95,6 @@ export function Dashboard() {
   const suggestions = suggestRoutes(data.routes, data.trips, carAt);
   const odoNow = ledger.at(-1)?.odoEnd ?? vehicle.start_odometer;
   const thisMonth = months.find((m) => m.month === monthOf(todayLocal()));
-  const prevOpen = months.filter((m) => m.month < monthOf(todayLocal()) && !m.closed && m.trips.length > 0);
   const lastCheck = checks.at(-1);
   const year = todayLocal().slice(0, 4);
   const yearKm = months.filter((m) => m.month.startsWith(year)).reduce((a, m) => a + m.km, 0);
@@ -164,23 +164,13 @@ export function Dashboard() {
         </div>
       </section>
 
-      {(prevOpen.length > 0 || (lastCheck && Math.abs(lastCheck.diff) >= 50)) && (
-        <div className="grid gap-3 md:grid-cols-2">
-          {prevOpen.length > 0 && (
-            <Notice tone="info" action={<Link to={`/ewidencja/${prevOpen.at(-1)!.month}`} className="btn btn-secondary px-3 py-1.5 text-xs">Otwórz</Link>}>
-              {prevOpen.length === 1
-                ? <><b className="first-letter:uppercase">{monthName(prevOpen[0].month)}</b> czeka na zatwierdzenie.</>
-                : <><b>{plural(prevOpen.length, "miesiąc", "miesiące", "miesięcy")}</b> {prevOpen.length % 10 >= 2 && prevOpen.length % 10 <= 4 && (prevOpen.length % 100 < 12 || prevOpen.length % 100 > 14) ? "czekają" : "czeka"} na zatwierdzenie.</>}
-              {" "}Sprawdź wpisy, wydrukuj i podpisz.
-            </Notice>
-          )}
-          {lastCheck && Math.abs(lastCheck.diff) >= 50 && (
-            <Notice tone="warn" action={<Link to="/raporty#licznik" className="btn btn-secondary px-3 py-1.5 text-xs">Szczegóły</Link>}>
-              Faktyczny licznik ({dayLabel(lastCheck.reading.day)}: {km(lastCheck.reading.km)}) różni się od ewidencji
-              o <b>{signedKm(lastCheck.diff)}</b>.
-            </Notice>
-          )}
-        </div>
+      <MonthReminder />
+
+      {lastCheck && Math.abs(lastCheck.diff) >= 50 && (
+        <Notice tone="warn" action={<Link to="/raporty#licznik" className="btn btn-secondary px-3 py-1.5 text-xs">Szczegóły</Link>}>
+          Faktyczny licznik{lastCheck.reading.source === "fvmeter" ? " z FV Meter" : ""} ({dayLabel(lastCheck.reading.day)}: {km(lastCheck.reading.km)}) różni się od ewidencji
+          o <b>{signedKm(lastCheck.diff)}</b>.
+        </Notice>
       )}
 
       <div className="grid gap-6 xl:grid-cols-[1fr_22rem]">

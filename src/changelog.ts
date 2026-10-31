@@ -12,6 +12,18 @@ export const APP_VERSION: string = __APP_VERSION__;
 
 export const RELEASES: Release[] = [
   {
+    version: "1.1.0",
+    date: "2026-11-01",
+    title: "Przebieg z FV Meter, przypomnienie o zamknięciu miesiąca, osobne konta",
+    changes: [
+      { kind: "new", text: "Przebieg Tesli wpisywany w FV Meter pobiera się sam do kontroli licznika – nie trzeba go przepisywać (Ustawienia → Przebieg z FV Meter)." },
+      { kind: "new", text: "Przypomnienie na Pulpicie od 1. dnia miesiąca: sprawdź, wydrukuj i zatwierdź poprzedni miesiąc. Przy „Ewidencji” w menu pojawia się kropka." },
+      { kind: "new", text: "Każde konto ma własne dane – np. osobne konto dla żony z jej autem, bez dostępu do Twojej ewidencji i FV Meter." },
+      { kind: "improved", text: "Import z Excela może od razu oznaczyć zakończone miesiące jako zatwierdzone (były już podpisane w arkuszu)." },
+      { kind: "improved", text: "Przypomnienie dotyczy tylko poprzedniego miesiąca – bez ciągłych komunikatów o starszych miesiącach." },
+    ],
+  },
+  {
     version: "1.0.0",
     date: "2026-10-31",
     title: "Pierwsza wersja – koniec z arkuszem",

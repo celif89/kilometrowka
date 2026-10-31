@@ -52,6 +52,8 @@ export interface OdometerReading {
   day: string;
   km: number;
   note: string | null;
+  /** odczyt pobrany z FV Meter (tylko do odczytu) */
+  source?: "fvmeter";
 }
 
 export interface MonthClose {
