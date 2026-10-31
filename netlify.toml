@@ -1,0 +1,14 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  # klucz „anon”/„publishable” Supabase jest publiczny z założenia (dostęp chroni RLS)
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY"
+
+# aplikacja jednostronicowa – wszystkie adresy obsługuje index.html
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
