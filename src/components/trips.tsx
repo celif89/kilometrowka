@@ -123,7 +123,7 @@ export interface TripDraft {
 }
 
 export function TripForm({ draft, onClose }: { draft: TripDraft | null; onClose: () => void }) {
-  const { data, vehicle, reload, ledger } = useData();
+  const { data, vehicle, reload, ledger, placeLabel } = useData();
   const { busy, run } = useAction(reload);
   const [t, setT] = useState<TripDraft | null>(draft);
   const [asRoute, setAsRoute] = useState(false);
@@ -205,14 +205,14 @@ export function TripForm({ draft, onClose }: { draft: TripDraft | null; onClose:
         </Field>
         <div className="relative space-y-3 rounded-2xl bg-slate-50 p-3 dark:bg-white/[0.03]">
           <Field label="Skąd">
-            <Combobox value={t.origin} onChange={(origin) => placeChanged({ origin })} options={places} placeholder="Miejscowość, ulica" />
+            <Combobox value={t.origin} onChange={(origin) => placeChanged({ origin })} options={places} labelOf={placeLabel} placeholder="Miejscowość, ulica" />
           </Field>
           <button type="button" className="btn btn-secondary absolute top-[3.6rem] right-5 z-10 size-8 rounded-full p-0 shadow-sm"
             onClick={() => placeChanged({ origin: t.destination, destination: t.origin })} aria-label="Zamień kierunek" title="Zamień kierunek">
             <ArrowLeftRight className="size-3.5 rotate-90" />
           </button>
           <Field label="Dokąd">
-            <Combobox value={t.destination} onChange={(destination) => placeChanged({ destination })} options={places} placeholder="Miejscowość, ulica" />
+            <Combobox value={t.destination} onChange={(destination) => placeChanged({ destination })} options={places} labelOf={placeLabel} placeholder="Miejscowość, ulica" />
           </Field>
         </div>
         <Field label="Przejechane kilometry" hint={

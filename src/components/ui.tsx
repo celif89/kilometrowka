@@ -123,18 +123,26 @@ export function NumberInput({ value, onChange, placeholder, suffix, autoFocus, i
   );
 }
 
-/** Pole tekstowe z listą podpowiedzi (miejsca, cele wyjazdu). */
-export function Combobox({ value, onChange, options, placeholder, autoFocus, id }: {
+const foldText = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l").trim();
+
+/**
+ * Pole tekstowe z listą podpowiedzi (miejsca, cele wyjazdu). `labelOf` podaje własną nazwę opcji
+ * (np. „Praca” dla adresu biura): można ją wpisać zamiast adresu – po wybraniu albo wyjściu z pola
+ * wstawia się pełny adres.
+ */
+export function Combobox({ value, onChange, options, placeholder, autoFocus, id, labelOf }: {
   value: string; onChange: (v: string) => void; options: string[]; placeholder?: string; autoFocus?: boolean; id?: string;
+  labelOf?: (v: string) => string | null;
 }) {
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
   const listId = useId();
-  const q = value.trim().toLowerCase();
-  const fold = (s: string) => s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/ł/g, "l");
-  const fq = fold(q);
-  const matches = options
-    .filter((o) => o.toLowerCase() !== q && (!fq || fold(o).includes(fq)))
+  const fq = foldText(value);
+  const items = options.map((o) => ({ value: o, label: labelOf?.(o) ?? null }));
+  const byLabel = (it: { label: string | null }) => !!fq && !!it.label && foldText(it.label).includes(fq);
+  const matches = items
+    .filter((it) => foldText(it.value) !== fq && (!fq || foldText(it.value).includes(fq) || byLabel(it)))
+    .sort((a, b) => Number(byLabel(b)) - Number(byLabel(a)))
     .slice(0, 8);
   const pick = (v: string) => { onChange(v); setOpen(false); };
   return (
@@ -151,12 +159,19 @@ export function Combobox({ value, onChange, options, placeholder, autoFocus, id 
         aria-controls={listId}
         onChange={(e) => { onChange(e.target.value); setOpen(true); setActive(0); }}
         onFocus={() => setOpen(true)}
-        onBlur={() => setTimeout(() => setOpen(false), 120)}
+        onBlur={() => {
+          // wpisana sama nazwa miejsca („Praca”) → pełny adres; tekst różniący się od znanej opcji
+          // tylko wielkością liter lub polskimi znakami („Mlyńska”) → znana pisownia
+          const exact = fq && (items.find((it) => it.label && foldText(it.label) === fq)
+            ?? items.find((it) => foldText(it.value) === fq && it.value !== value));
+          if (exact) onChange(exact.value);
+          setTimeout(() => setOpen(false), 120);
+        }}
         onKeyDown={(e) => {
           if (!open || matches.length === 0) return;
           if (e.key === "ArrowDown") { e.preventDefault(); setActive((a) => (a + 1) % matches.length); }
           else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => (a - 1 + matches.length) % matches.length); }
-          else if (e.key === "Enter") { e.preventDefault(); pick(matches[active]); }
+          else if (e.key === "Enter") { e.preventDefault(); pick(matches[active].value); }
           else if (e.key === "Escape") setOpen(false);
         }}
       />
@@ -164,11 +179,11 @@ export function Combobox({ value, onChange, options, placeholder, autoFocus, id 
         <ul id={listId} role="listbox"
           className="absolute inset-x-0 top-full z-20 mt-1.5 max-h-64 animate-pop overflow-auto rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl dark:border-white/10 dark:bg-ink-800">
           {matches.map((m, i) => (
-            <li key={m} role="option" aria-selected={i === active}>
+            <li key={m.value} role="option" aria-selected={i === active}>
               <button type="button"
                 className={cx("w-full rounded-xl px-3 py-2 text-left text-sm", i === active ? "bg-brand-50 text-brand-700 dark:bg-white/10 dark:text-white" : "hover:bg-slate-50 dark:hover:bg-white/5")}
-                onMouseDown={(e) => { e.preventDefault(); pick(m); }}>
-                {m}
+                onMouseDown={(e) => { e.preventDefault(); pick(m.value); }}>
+                {m.label ? <><span className="font-semibold">{m.label}</span><span className="ml-1.5 text-slate-500 dark:text-slate-400">· {m.value}</span></> : m.value}
               </button>
             </li>
           ))}

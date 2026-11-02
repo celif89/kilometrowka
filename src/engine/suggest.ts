@@ -1,8 +1,8 @@
 // Podpowiedzi przy wpisywaniu: kolejne trasy, kilometry dla znanej pary miejsc, propozycje stałych tras.
-import { normalizePlace, round1, samePlace } from "./ledger";
+import { normalizePlace, placeFold, round1, samePlace } from "./ledger";
 import type { Route, Trip } from "./types";
 
-const key = (s: string) => normalizePlace(s).toLowerCase();
+const key = placeFold;
 const pairKey = (o: string, d: string) => `${key(o)}→${key(d)}`;
 
 function mostCommon<T>(items: T[]): T | undefined {
@@ -56,19 +56,24 @@ export function purposeForPair(trips: Trip[], origin: string, destination: strin
   return mostCommon(trips.filter((t) => pairKey(t.origin, t.destination) === k).map((t) => t.purpose.trim())) ?? null;
 }
 
-/** Znane miejsca, od najczęściej odwiedzanych. */
+/**
+ * Znane miejsca, od najczęściej odwiedzanych. Warianty tego samego adresu (literówki w polskich
+ * znakach, kropkach) są łączone – zostaje najczęściej używana pisownia.
+ */
 export function knownPlaces(trips: Trip[], routes: Route[]): string[] {
-  const counts = new Map<string, { label: string; n: number }>();
+  const groups = new Map<string, { n: number; spellings: Map<string, number> }>();
   const add = (s: string, w = 1) => {
     const label = normalizePlace(s);
     if (!label) return;
-    const c = counts.get(key(label));
-    if (c) c.n += w;
-    else counts.set(key(label), { label, n: w });
+    const g = groups.get(key(label)) ?? { n: 0, spellings: new Map<string, number>() };
+    g.n += w;
+    g.spellings.set(label, (g.spellings.get(label) ?? 0) + w);
+    groups.set(key(label), g);
   };
   for (const t of trips) { add(t.origin); add(t.destination); }
   for (const r of routes) { add(r.origin, 5); add(r.destination, 5); }
-  return [...counts.values()].sort((a, b) => b.n - a.n).map((c) => c.label);
+  return [...groups.values()].sort((a, b) => b.n - a.n)
+    .map((g) => [...g.spellings.entries()].sort((a, b) => b[1] - a[1])[0][0]);
 }
 
 export function knownPurposes(trips: Trip[], routes: Route[]): string[] {

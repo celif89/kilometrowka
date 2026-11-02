@@ -12,7 +12,7 @@ import { km, num, plural } from "../lib/format";
 type RouteDraft = Omit<Route, "id"> & { id?: number };
 
 export function RoutesPage() {
-  const { data, reload, placeLabels } = useData();
+  const { data, reload, placeLabels, placeLabel } = useData();
   const { busy, run } = useAction(reload);
   const [editing, setEditing] = useState<RouteDraft | null>(null);
   const [tpl, setTpl] = useState<(Omit<Template, "id"> & { id?: number }) | null>(null);
@@ -180,8 +180,8 @@ export function RoutesPage() {
             <Field label="Cel wyjazdu">
               <Combobox value={editing.purpose} onChange={(purpose) => setEditing({ ...editing, purpose })} options={purposes} />
             </Field>
-            <Field label="Skąd"><Combobox value={editing.origin} onChange={(origin) => setEditing({ ...editing, origin })} options={places} /></Field>
-            <Field label="Dokąd"><Combobox value={editing.destination} onChange={(destination) => setEditing({ ...editing, destination })} options={places} /></Field>
+            <Field label="Skąd"><Combobox value={editing.origin} onChange={(origin) => setEditing({ ...editing, origin })} options={places} labelOf={placeLabel} /></Field>
+            <Field label="Dokąd"><Combobox value={editing.destination} onChange={(destination) => setEditing({ ...editing, destination })} options={places} labelOf={placeLabel} /></Field>
             <Field label="Kilometry" hint={<MapsLink origin={editing.origin} destination={editing.destination} />}>
               <NumberInput value={editing.km || null} onChange={(v) => setEditing({ ...editing, km: v ?? 0 })} suffix="km" />
             </Field>

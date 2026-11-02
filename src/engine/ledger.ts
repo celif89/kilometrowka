@@ -126,7 +126,16 @@ export function validateTrip(t: Pick<Trip, "day" | "purpose" | "origin" | "desti
   return errors;
 }
 
-export const samePlace = (a: string, b: string) => normalizePlace(a).toLowerCase() === normalizePlace(b).toLowerCase();
+/**
+ * Klucz porównania miejsc: bez wielkości liter, polskich znaków i interpunkcji, więc
+ * „Rybnik, ul. Mlyńska”, „Rybnik ul Młyńska” i „rybnik, ul. młyńska” to to samo miejsce.
+ */
+export function placeFold(s: string): string {
+  return s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ł/g, "l")
+    .replace(/[.,;:_/\\\-–—]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export const samePlace = (a: string, b: string) => placeFold(a) === placeFold(b);
 
 export function normalizePlace(s: string): string {
   return s.replace(/\s+/g, " ").replace(/\s+,/g, ",").trim();

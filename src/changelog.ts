@@ -12,6 +12,17 @@ export const APP_VERSION: string = __APP_VERSION__;
 
 export const RELEASES: Release[] = [
   {
+    version: "1.2.1",
+    date: "2026-11-02",
+    title: "Literówki w adresach, nazwy miejsc w formularzu, Google Maps",
+    changes: [
+      { kind: "fixed", text: "Adresy różniące się tylko polskimi znakami, kropkami lub wielkością liter (np. „Mlyńska” i „Młyńska”) są traktowane jako to samo miejsce – znika fałszywe ostrzeżenie „poprzedni przejazd skończył się w…”, działa nazwa miejsca i podpowiedź km." },
+      { kind: "fixed", text: "Google Maps: adres przekazywany jako „ulica, miejscowość, Polska” – np. „Wilkowice, ul. Wyzwolenia” nie prowadzi już do innej ulicy Wyzwolenia." },
+      { kind: "improved", text: "W polach „Skąd” i „Dokąd” można wpisać nazwę miejsca (np. „Praca”) – wstawia się pełny adres. Podpowiedzi pokazują nazwę i adres." },
+      { kind: "improved", text: "Podpowiedzi miejsc łączą warianty tego samego adresu, a wpisany adres z literówką jest zamieniany na znaną pisownię." },
+    ],
+  },
+  {
     version: "1.2.0",
     date: "2026-11-02",
     title: "Excel jak wydruk, wybór czcionki, Google Maps",

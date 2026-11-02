@@ -2,6 +2,13 @@
 
 Numer wersji widać w aplikacji (menu → „Co nowego”). Format: `główna.funkcje.poprawki`.
 
+## 1.2.1 – 2026-11-02 – Literówki w adresach, nazwy miejsc w formularzu, Google Maps
+
+- **Poprawione:** Adresy różniące się tylko polskimi znakami, kropkami lub wielkością liter (np. „Mlyńska” i „Młyńska”) są traktowane jako to samo miejsce – znika fałszywe ostrzeżenie „poprzedni przejazd skończył się w…”, działa nazwa miejsca i podpowiedź km.
+- **Poprawione:** Google Maps: adres przekazywany jako „ulica, miejscowość, Polska” – np. „Wilkowice, ul. Wyzwolenia” nie prowadzi już do innej ulicy Wyzwolenia.
+- **Ulepszone:** W polach „Skąd” i „Dokąd” można wpisać nazwę miejsca (np. „Praca”) – wstawia się pełny adres. Podpowiedzi pokazują nazwę i adres.
+- **Ulepszone:** Podpowiedzi miejsc łączą warianty tego samego adresu, a wpisany adres z literówką jest zamieniany na znaną pisownię.
+
 ## 1.2.0 – 2026-11-02 – Excel jak wydruk, wybór czcionki, Google Maps
 
 - **Nowe:** Eksport do Excela w układzie wydruku: przejazd w dwóch wierszach z licznikiem wyjazd/przyjazd, linie między dniami, tytuł w nagłówku i „Strona X z Y” w stopce, podział stron tylko między dniami.

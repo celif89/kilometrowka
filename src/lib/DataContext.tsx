@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { buildLedger, continuityGaps, type LedgerTrip, monthSummaries, type MonthSummary, odometerChecks, type OdometerCheck } from "../engine/ledger";
+import { buildLedger, continuityGaps, placeFold, type LedgerTrip, monthSummaries, type MonthSummary, odometerChecks, type OdometerCheck } from "../engine/ledger";
 import { fvMeterReadings, fvMeterVehicleId } from "../engine/fvmeter";
 import { monthToClose } from "../engine/reminders";
 import type { Company, Vehicle } from "../engine/types";
@@ -28,7 +28,8 @@ interface DataState {
   reminder: MonthSummary | null;
 }
 
-export const placeKey = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+/** klucz nazw miejsc – ten sam co przy porównywaniu adresów (literówki w polskich znakach nie przeszkadzają) */
+export const placeKey = placeFold;
 
 export function parseLabels(raw: string | undefined): Record<string, string> {
   try {
