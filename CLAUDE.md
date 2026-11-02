@@ -7,5 +7,8 @@
   2. dopisz wpis na górze `RELEASES` w `src/changelog.ts`,
   3. ten sam wpis w `CHANGELOG.md`.
   Test `tests/changelog.test.ts` sprawdza, że te trzy miejsca się zgadzają.
+- **Wypychaj zmiany większymi paczkami** (prośba właściciela): drobne poprawki zbieraj lokalnie
+  i wypychaj razem jako jedno wydanie z jednym numerem wersji i jednym wpisem w historii zmian –
+  nie każdą poprawkę osobno. Wyjątek: pilny błąd, który blokuje korzystanie z aplikacji.
 - Zmiany schematu bazy: nowy plik w `supabase/migrations/` (nie edytuj już wgranych) i krok w INSTRUKCJA.md.
 - Nie commituj prawdziwego arkusza z danymi (`*.xlsx` jest w .gitignore; wyjątek: `tests/fixtures`).
