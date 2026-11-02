@@ -58,13 +58,18 @@ export function PrintPage() {
 
       {months.map((m) => {
         const [year] = m.month.split("-");
+        const days: LedgerTrip[][] = [];
+        for (const t of m.trips) {
+          if (days.at(-1)?.[0].day === t.day) days.at(-1)!.push(t);
+          else days.push([t]);
+        }
         return (
           <article key={m.month} className="print-page mx-auto mb-6 w-full max-w-[210mm] bg-white px-[14mm] py-[10mm] text-black shadow-xl"
             style={{ fontFamily: "Calibri, Carlito, 'Segoe UI', Arial, sans-serif", fontSize: "10.5pt", lineHeight: 1.25 }}>
             <table className="print-table w-full table-fixed border-collapse" style={{ fontSize: "9.5pt" }}>
               <colgroup>
-                <col style={{ width: "6.1%" }} /><col style={{ width: "10.5%" }} /><col style={{ width: "11.9%" }} /><col style={{ width: "29.7%" }} />
-                <col style={{ width: "12.2%" }} /><col style={{ width: "14.7%" }} /><col style={{ width: "14.9%" }} />
+                <col style={{ width: "7.8%" }} /><col style={{ width: "10.3%" }} /><col style={{ width: "11.9%" }} /><col style={{ width: "28.3%" }} />
+                <col style={{ width: "12%" }} /><col style={{ width: "14.7%" }} /><col style={{ width: "15%" }} />
               </colgroup>
               {/* tytuł powtarza się u góry każdej strony */}
               <thead>
@@ -75,7 +80,9 @@ export function PrintPage() {
                   </th>
                 </tr>
               </thead>
-              <tbody>
+              {/* każdy dzień w osobnej grupie wierszy, której nie wolno dzielić między strony;
+                  pierwsza grupa ma też nagłówek miesiąca i kolumn, żeby nie zostały same na dole strony */}
+              <tbody style={{ breakInside: "avoid" }}>
                 <tr>
                   <td colSpan={7} className="pb-3 text-left" style={{ fontSize: "10pt" }}>
                     {withHeader && (
@@ -97,14 +104,19 @@ export function PrintPage() {
                 <tr>
                   {["Nr kolejny wpisu", "Data wyjazdu", "Cel wyjazdu", "Opis trasy wyjazdu (skąd - dokąd)",
                     "Liczba faktycznie przejechanych kilometrów", "Stan licznika (wyjazd/przyjazd)", "Imię i nazwisko osoby kierującej pojazdem"].map((h) => (
-                    <td key={h} className="px-1 py-1 text-center align-middle" style={{ border: LINE }}>{h}</td>
+                    <td key={h} className="px-0.5 py-1 text-center align-middle" style={{ border: LINE, hyphens: "manual" }}>{h}</td>
                   ))}
                 </tr>
                 {m.trips.length === 0 && (
                   <tr><td colSpan={7} className="px-2 py-3 text-center" style={{ border: LINE }}>W tym miesiącu pojazd nie był używany.</td></tr>
                 )}
-                {m.trips.map((t, i) => <TripRow key={t.id} t={t} newDay={i === 0 || m.trips[i - 1].day !== t.day} last={i === m.trips.length - 1} />)}
+                {days[0]?.map((t, i) => <TripRow key={t.id} t={t} newDay={i === 0} last={m.trips.length === days[0].length && i === days[0].length - 1} />)}
               </tbody>
+              {days.slice(1).map((day, d) => (
+                <tbody key={day[0].day} style={{ breakInside: "avoid" }}>
+                  {day.map((t, i) => <TripRow key={t.id} t={t} newDay={i === 0} last={d === days.length - 2 && i === day.length - 1} />)}
+                </tbody>
+              ))}
             </table>
 
             <div className="mt-4 flex items-start justify-between gap-6" style={{ breakInside: "avoid", fontSize: "10pt" }}>

@@ -12,6 +12,15 @@ export const APP_VERSION: string = __APP_VERSION__;
 
 export const RELEASES: Release[] = [
   {
+    version: "1.1.2",
+    date: "2026-11-02",
+    title: "Poprawki wydruku",
+    changes: [
+      { kind: "fixed", text: "Wydruk: dzień nie jest już dzielony między strony – każda strona kończy się pełnym dniem." },
+      { kind: "fixed", text: "Wydruk: nagłówek „Nr kolejny wpisu” mieści się w pierwszej kolumnie." },
+    ],
+  },
+  {
     version: "1.1.1",
     date: "2026-11-02",
     title: "Wydruk jak w arkuszu, poprawki Pulpitu",

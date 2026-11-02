@@ -2,6 +2,11 @@
 
 Numer wersji widać w aplikacji (menu → „Co nowego”). Format: `główna.funkcje.poprawki`.
 
+## 1.1.2 – 2026-11-02 – Poprawki wydruku
+
+- **Poprawione:** Wydruk: dzień nie jest już dzielony między strony – każda strona kończy się pełnym dniem.
+- **Poprawione:** Wydruk: nagłówek „Nr kolejny wpisu” mieści się w pierwszej kolumnie.
+
 ## 1.1.1 – 2026-11-02 – Wydruk jak w arkuszu, poprawki Pulpitu
 
 - **Ulepszone:** Wydruk / PDF w układzie dotychczasowego arkusza: tytuł na każdej stronie, licznik wyjazd/przyjazd w dwóch liniach, linie między dniami, „Strona X z Y” i podpis podatnika. Dane firmy i pojazdu można dołączyć jednym kliknięciem.
