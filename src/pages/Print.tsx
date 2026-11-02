@@ -1,15 +1,31 @@
 import { ArrowLeft, Printer } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Spinner } from "../components/ui";
-import { buildLedger, monthSummaries } from "../engine/ledger";
+import { buildLedger, type LedgerTrip, monthSummaries } from "../engine/ledger";
 import { useData } from "../lib/DataContext";
 import { dayLabel, monthGenitive, monthOnly, num } from "../lib/format";
+
+const HEADER_KEY = "km.printHeader";
+
+/** „46 153”, „8 671” – grupowanie jak w arkuszu (także dla liczb czterocyfrowych). */
+export function odo(v: number): string {
+  const [int, frac] = String(Math.round(v * 10) / 10).split(".");
+  return int.replace(/\B(?=(\d{3})+(?!\d))/g, " ") + (frac ? `,${frac}` : "");
+}
+
+const U = ({ children }: { children: React.ReactNode }) => <span className="underline underline-offset-2">{children}</span>;
+
+// obramowania jak w arkuszu: siatka w nagłówku, w treści tylko ramka i linie między dniami
+const LINE = "1px solid #000";
 
 export function PrintPage() {
   const { vehicleId, from, to } = useParams();
   const { data, company } = useData();
   const vehicle = data?.vehicles.find((v) => v.id === Number(vehicleId));
+  const [withHeader, setWithHeader] = useState(() => {
+    try { return localStorage.getItem(HEADER_KEY) === "1"; } catch { return false; }
+  });
 
   useEffect(() => {
     document.title = vehicle ? `Ewidencja ${vehicle.plate} ${from === to ? from : `${from} – ${to}`}` : "Ewidencja";
@@ -21,81 +37,106 @@ export function PrintPage() {
 
   const months = monthSummaries(vehicle, buildLedger(vehicle, data.trips), data.closes).filter((m) => m.month >= from && m.month <= to);
   const firm = [company.name, company.address1, company.address2, company.nip && `NIP: ${company.nip}`, company.regon && `REGON: ${company.regon}`].filter(Boolean);
+  const signatory = (company.signatory || company.name).toUpperCase();
 
   return (
     <div className="min-h-dvh bg-slate-200 py-6 print:bg-white print:py-0 dark:bg-ink-950">
       <div className="no-print mx-auto mb-5 flex max-w-[210mm] flex-wrap items-center justify-between gap-3 px-4">
         <Link to={`/ewidencja/${from}`} className="btn btn-secondary"><ArrowLeft className="size-4" /> Wróć</Link>
-        <div className="text-sm text-slate-600 dark:text-slate-300">{months.length} {months.length === 1 ? "strona" : "stron(y)"} A4 · w oknie drukowania wybierz „Zapisz jako PDF”</div>
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          <input type="checkbox" className="size-4 accent-brand-600" checked={withHeader} onChange={(e) => {
+            setWithHeader(e.target.checked);
+            try { localStorage.setItem(HEADER_KEY, e.target.checked ? "1" : "0"); } catch { /* */ }
+          }} />
+          Dane firmy i pojazdu nad tabelą
+        </label>
         <button className="btn btn-primary" onClick={() => window.print()}><Printer className="size-4" /> Drukuj / PDF</button>
+        <p className="w-full text-center text-xs text-slate-500">
+          W oknie drukowania wybierz „Zapisz jako PDF”, a w „Więcej ustawień” odznacz „Nagłówki i stopki”.
+        </p>
       </div>
 
-      {months.map((m) => (
-        <article key={m.month} className="print-page mx-auto mb-6 w-full max-w-[210mm] bg-white p-[12mm] text-[10.5px] leading-snug text-black shadow-xl"
-          style={{ fontFamily: "Arial, Helvetica, sans-serif" }}>
-          <header className="flex justify-between gap-6">
-            <div>{firm.map((l, i) => <div key={i} className={i === 0 ? "font-bold" : ""}>{l}</div>)}</div>
-            <div className="text-right">
-              <div>Pojazd: <b>{vehicle.name}</b></div>
-              <div>Numer rejestracyjny: <b>{vehicle.plate}</b></div>
-              <div>Dzień rozpoczęcia prowadzenia ewidencji: {dayLabel(vehicle.start_date)}</div>
-              <div>Stan licznika na dzień rozpoczęcia ewidencji: {num(vehicle.start_odometer)} km</div>
-              {vehicle.end_date && <div>Dzień zakończenia prowadzenia ewidencji: {dayLabel(vehicle.end_date)}</div>}
-            </div>
-          </header>
-
-          <h1 className="mt-6 text-center text-[15px] font-bold" style={{ fontFamily: "inherit" }}>
-            Ewidencja przebiegu pojazdu za miesiąc {monthOnly(m.month)} {m.month.slice(0, 4)}
-          </h1>
-          <p className="mt-2">Stan licznika na początek miesiąca {monthGenitive(m.month)}: <b>{num(m.odoStart)} km</b></p>
-
-          <table className="print-table mt-3 w-full table-fixed border-collapse text-[9.5px]">
-            <colgroup>
-              <col style={{ width: "6%" }} /><col style={{ width: "10.5%" }} /><col style={{ width: "15%" }} /><col style={{ width: "35%" }} />
-              <col style={{ width: "8.5%" }} /><col style={{ width: "12.5%" }} /><col style={{ width: "12.5%" }} />
-            </colgroup>
-            <thead>
-              <tr className="bg-slate-100">
-                {["Nr kolejny wpisu", "Data wyjazdu", "Cel wyjazdu", "Opis trasy wyjazdu (skąd – dokąd)", "Liczba faktycznie przejechanych km",
-                  "Stan licznika wyjazd / przyjazd", "Imię i nazwisko osoby kierującej pojazdem"].map((h) => (
-                  <th key={h} className="border border-slate-500 px-1.5 py-1 text-center align-middle text-[9px] font-bold">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {m.trips.length === 0 && <tr><td colSpan={7} className="border border-slate-500 px-2 py-3 text-center">W tym miesiącu pojazd nie był używany.</td></tr>}
-              {m.trips.map((t) => (
-                <tr key={t.id}>
-                  <td className="border border-slate-500 px-1 py-0.5 text-center">{t.no}</td>
-                  <td className="border border-slate-500 px-1 py-0.5 text-center whitespace-nowrap">{dayLabel(t.day)}</td>
-                  <td className="border border-slate-500 px-1.5 py-0.5">{t.purpose}</td>
-                  <td className="border border-slate-500 px-1.5 py-0.5">{t.origin} – {t.destination}</td>
-                  <td className="border border-slate-500 px-1.5 py-0.5 text-right">{num(t.km)}</td>
-                  <td className="border border-slate-500 px-1.5 py-0.5 text-right whitespace-nowrap">{num(t.odoStart)} / {num(t.odoEnd)}</td>
-                  <td className="border border-slate-500 px-1.5 py-0.5">{t.driver}</td>
+      {months.map((m) => {
+        const [year] = m.month.split("-");
+        return (
+          <article key={m.month} className="print-page mx-auto mb-6 w-full max-w-[210mm] bg-white px-[14mm] py-[10mm] text-black shadow-xl"
+            style={{ fontFamily: "Calibri, Carlito, 'Segoe UI', Arial, sans-serif", fontSize: "10.5pt", lineHeight: 1.25 }}>
+            <table className="print-table w-full table-fixed border-collapse" style={{ fontSize: "9.5pt" }}>
+              <colgroup>
+                <col style={{ width: "6.1%" }} /><col style={{ width: "10.5%" }} /><col style={{ width: "11.9%" }} /><col style={{ width: "29.7%" }} />
+                <col style={{ width: "12.2%" }} /><col style={{ width: "14.7%" }} /><col style={{ width: "14.9%" }} />
+              </colgroup>
+              {/* tytuł powtarza się u góry każdej strony */}
+              <thead>
+                <tr>
+                  <th colSpan={7} className="pb-3 text-center font-normal">
+                    <div style={{ fontSize: "11.5pt" }} className="font-bold">EWIDENCJA PRZEBIEGU POJAZDU</div>
+                    <div style={{ fontSize: "10.5pt" }}>wykorzystywanego wyłącznie do celów działalności gospodarczej</div>
+                  </th>
                 </tr>
-              ))}
-              <tr>
-                <td colSpan={4} className="px-1.5 py-1 text-right font-bold">Razem w miesiącu:</td>
-                <td className="border border-slate-500 px-1.5 py-1 text-right font-bold">{num(m.km)}</td>
-                <td colSpan={2} />
-              </tr>
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={7} className="pb-3 text-left" style={{ fontSize: "10pt" }}>
+                    {withHeader && (
+                      <div className="mb-3 flex justify-between gap-6" style={{ fontSize: "9pt" }}>
+                        <div>{firm.map((l, i) => <div key={i} className={i === 0 ? "font-bold" : ""}>{l}</div>)}</div>
+                        <div className="text-right">
+                          <div>Pojazd: <b>{vehicle.name}</b></div>
+                          <div>Numer rejestracyjny: <b>{vehicle.plate}</b></div>
+                          <div>Dzień rozpoczęcia prowadzenia ewidencji: {dayLabel(vehicle.start_date)}</div>
+                          <div>Stan licznika na dzień rozpoczęcia ewidencji: {odo(vehicle.start_odometer)}</div>
+                          {vehicle.end_date && <div>Dzień zakończenia prowadzenia ewidencji: {dayLabel(vehicle.end_date)}</div>}
+                        </div>
+                      </div>
+                    )}
+                    <div className="font-bold">Ewidencja za miesiąc <U>{monthOnly(m.month)}</U>, roku <U>{year}</U></div>
+                    <div>Stan licznika <U>{odo(m.odoStart)}</U> na początek miesiąca <U>{monthGenitive(m.month).split(" ")[0]}</U>, roku <U>{year}</U></div>
+                  </td>
+                </tr>
+                <tr>
+                  {["Nr kolejny wpisu", "Data wyjazdu", "Cel wyjazdu", "Opis trasy wyjazdu (skąd - dokąd)",
+                    "Liczba faktycznie przejechanych kilometrów", "Stan licznika (wyjazd/przyjazd)", "Imię i nazwisko osoby kierującej pojazdem"].map((h) => (
+                    <td key={h} className="px-1 py-1 text-center align-middle" style={{ border: LINE }}>{h}</td>
+                  ))}
+                </tr>
+                {m.trips.length === 0 && (
+                  <tr><td colSpan={7} className="px-2 py-3 text-center" style={{ border: LINE }}>W tym miesiącu pojazd nie był używany.</td></tr>
+                )}
+                {m.trips.map((t, i) => <TripRow key={t.id} t={t} newDay={i === 0 || m.trips[i - 1].day !== t.day} last={i === m.trips.length - 1} />)}
+              </tbody>
+            </table>
 
-          <div className="mt-5 flex items-end justify-between gap-8" style={{ breakInside: "avoid" }}>
-            <div>
-              <p>Stan licznika na koniec miesiąca {monthGenitive(m.month)}: <b>{num(m.odoEnd)} km</b></p>
-              <p className="mt-0.5">Liczba przejechanych kilometrów w miesiącu: <b>{num(m.km)} km</b></p>
+            <div className="mt-4 flex items-start justify-between gap-6" style={{ breakInside: "avoid", fontSize: "10pt" }}>
+              <div>Stan licznika <U>{odo(m.odoEnd)}</U> na koniec miesiąca <U>{monthGenitive(m.month).split(" ")[0]}</U>, roku <U>{year}</U></div>
+              <div className="w-[30%] shrink-0 text-center">
+                <div>Podpis podatnika</div>
+                <div className="mt-4 font-bold">{signatory}</div>
+              </div>
             </div>
-            <div className="w-64 text-center">
-              <div className="h-10" />
-              <div className="border-t border-dotted border-black pt-1">Podpis podatnika</div>
-              <div className="text-[9px] text-slate-600">{company.signatory || company.name}</div>
-            </div>
-          </div>
-        </article>
-      ))}
+          </article>
+        );
+      })}
     </div>
+  );
+}
+
+function TripRow({ t, newDay, last }: { t: LedgerTrip; newDay: boolean; last: boolean }) {
+  const cell = (i: number): React.CSSProperties => ({
+    borderLeft: i === 0 ? LINE : undefined,
+    borderRight: i === 6 ? LINE : undefined,
+    borderTop: newDay ? LINE : undefined,
+    borderBottom: last ? LINE : undefined,
+  });
+  const values = [
+    String(t.no), dayLabel(t.day), t.purpose, `${t.origin} - ${t.destination}`, num(t.km),
+    <>{odo(t.odoStart)}<br />{odo(t.odoEnd)}</>, t.driver,
+  ];
+  return (
+    <tr>
+      {values.map((v, i) => (
+        <td key={i} className="px-1 py-[1px] text-center align-middle" style={cell(i)}>{v}</td>
+      ))}
+    </tr>
   );
 }

@@ -41,7 +41,7 @@ export function RouteChip({ route, onClick, highlight, disabled }: { route: Rout
   const color = routeColor(route);
   return (
     <button type="button" onClick={onClick} disabled={disabled} data-route-chip
-      className={cx("group relative flex min-w-[13rem] max-w-[17rem] shrink-0 flex-col items-start gap-1 overflow-hidden rounded-2xl border bg-white px-3.5 py-3 text-left transition",
+      className={cx("group relative flex w-full min-w-0 flex-col items-start gap-1 overflow-hidden rounded-2xl border bg-white px-3.5 py-3 text-left transition",
         "hover:-translate-y-0.5 hover:shadow-lg active:translate-y-0 disabled:opacity-50 dark:bg-ink-900",
         highlight ? "border-brand-300 shadow-md shadow-brand-500/10 dark:border-brand-500/40" : "border-slate-200 dark:border-white/10")}>
       <span className="absolute inset-y-0 left-0 w-1" style={{ background: color }} />

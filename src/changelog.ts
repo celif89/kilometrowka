@@ -12,6 +12,16 @@ export const APP_VERSION: string = __APP_VERSION__;
 
 export const RELEASES: Release[] = [
   {
+    version: "1.1.1",
+    date: "2026-11-02",
+    title: "Wydruk jak w arkuszu, poprawki Pulpitu",
+    changes: [
+      { kind: "improved", text: "Wydruk / PDF w układzie dotychczasowego arkusza: tytuł na każdej stronie, licznik wyjazd/przyjazd w dwóch liniach, linie między dniami, „Strona X z Y” i podpis podatnika. Dane firmy i pojazdu można dołączyć jednym kliknięciem." },
+      { kind: "fixed", text: "Pasek dni na Pulpicie przewija się za wybraną datą – przy klikaniu strzałek dzień nie znika z widoku." },
+      { kind: "fixed", text: "Na Pulpicie widać wszystkie stałe trasy naraz: najpierw te z miejsca, w którym stoi auto, potem pozostałe." },
+    ],
+  },
+  {
     version: "1.1.0",
     date: "2026-11-01",
     title: "Przebieg z FV Meter, przypomnienie o zamknięciu miesiąca, osobne konta",

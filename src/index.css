@@ -99,13 +99,22 @@
 /* ---------------------------------------------------------------------------
    Wydruk ewidencji (strona /druk) – A4, czarno na białym
 --------------------------------------------------------------------------- */
-@page { size: A4 portrait; margin: 12mm 10mm; }
+@page {
+  size: A4 portrait;
+  margin: 12mm 16mm 14mm;
+  /* „Strona 1 z 4” jak w arkuszu (Chrome/Edge 131+) */
+  @bottom-center {
+    content: "Strona " counter(page) " z " counter(pages);
+    font-family: Calibri, Carlito, "Segoe UI", Arial, sans-serif;
+    font-size: 10pt;
+  }
+}
 
 @media print {
   html, body { background: #fff !important; color: #000 !important; }
   body { background-image: none !important; }
   .no-print { display: none !important; }
-  .print-page { break-after: page; box-shadow: none !important; border: 0 !important; margin: 0 !important; padding: 0 !important; }
+  .print-page { break-after: page; box-shadow: none !important; border: 0 !important; margin: 0 !important; padding: 0 !important; max-width: none !important; }
   .print-page:last-child { break-after: auto; }
   .print-table tr { break-inside: avoid; }
 }

@@ -1,5 +1,5 @@
 import { CalendarDays, ChevronLeft, ChevronRight, FileSpreadsheet, Layers, Lock, MapPin, Plus, Repeat, Route as RouteIcon, Settings2} from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { MonthReminder } from "../components/MonthReminder";
 import { DayTimeline, nextSeq, Place, RouteChip, type TripDraft, TripForm, tripFromRoute } from "../components/trips";
@@ -28,22 +28,33 @@ function Odometer({ value }: { value: number }) {
 
 function DayStrip({ day, onChange, ledger }: { day: string; onChange: (d: string) => void; ledger: LedgerTrip[] }) {
   const today = todayLocal();
-  const end = day > today ? day : today;
-  const days = Array.from({ length: 14 }, (_, i) => addDays(end, i - 13));
+  // okno 3 tygodni przesuwa się razem z wybranym dniem (wcześniej przy cofaniu dzień znikał z paska)
+  const ahead = addDays(day, 7);
+  const end = day >= today ? day : ahead < today ? ahead : today;
+  const days = Array.from({ length: 21 }, (_, i) => addDays(end, i - 20));
+  const scroller = useRef<HTMLDivElement>(null);
   const kmByDay = useMemo(() => {
     const m = new Map<string, number>();
     for (const t of ledger) m.set(t.day, (m.get(t.day) ?? 0) + t.km);
     return m;
   }, [ledger]);
+  const first = useRef(true);
+  useEffect(() => {
+    const box = scroller.current;
+    const btn = box?.querySelector<HTMLElement>(`[data-day="${day}"]`);
+    if (!box || !btn) return;
+    box.scrollTo({ left: btn.offsetLeft - box.clientWidth / 2 + btn.offsetWidth / 2, behavior: first.current ? "auto" : "smooth" });
+    first.current = false;
+  }, [day]);
   return (
     <div className="flex items-center gap-2">
       <button className="btn btn-ghost btn-icon shrink-0" onClick={() => onChange(addDays(day, -1))} aria-label="Poprzedni dzień"><ChevronLeft className="size-4" /></button>
-      <div className="chip-scroll flex-1 scroll-smooth" ref={(el) => { if (el) el.scrollLeft = el.scrollWidth; }}>
+      <div ref={scroller} className="chip-scroll relative flex-1">
         {days.map((d) => {
           const k = kmByDay.get(d);
           const wd = weekday(d);
           return (
-            <button key={d} onClick={() => onChange(d)}
+            <button key={d} data-day={d} onClick={() => onChange(d)} title={dayLabel(d)}
               className={cx("flex w-12 shrink-0 flex-col items-center rounded-2xl py-2 transition",
                 d === day ? "bg-ink-900 text-white shadow-lg dark:bg-white dark:text-ink-900" : "hover:bg-slate-900/5 dark:hover:bg-white/5",
                 wd >= 5 && d !== day && "text-slate-400")}>
@@ -213,9 +224,21 @@ export function Dashboard() {
               </div>
               {suggestions.length === 0
                 ? <p className="text-sm text-slate-500">Nie masz jeszcze stałych tras. <Link to="/trasy" className="font-medium text-brand-600 underline">Dodaj pierwszą</Link> – potem przejazd dodasz jednym kliknięciem.</p>
-                : <div className="chip-scroll">{suggestions.slice(0, 12).map(({ route, fromHere }) => (
-                    <RouteChip key={route.id} route={route} highlight={fromHere} disabled={busy} onClick={() => addRoutes([route])} />
-                  ))}</div>}
+                : <div className="space-y-4">
+                    {[
+                      { label: carAt ? "Z tego miejsca" : null, items: suggestions.filter((x) => x.fromHere) },
+                      { label: suggestions.some((x) => x.fromHere) ? "Pozostałe trasy" : null, items: suggestions.filter((x) => !x.fromHere) },
+                    ].filter((g) => g.items.length > 0).map((g, i) => (
+                      <div key={i}>
+                        {g.label && <div className="mb-2 text-xs font-semibold tracking-wide text-slate-500 uppercase">{g.label}</div>}
+                        <div className="grid gap-2.5 sm:grid-cols-2 2xl:grid-cols-3">
+                          {g.items.map(({ route, fromHere }) => (
+                            <RouteChip key={route.id} route={route} highlight={fromHere} disabled={busy} onClick={() => addRoutes([route])} />
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>}
               {templates.length > 0 && (
                 <div className="mt-4">
                   <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold tracking-wide text-slate-500 uppercase"><Layers className="size-3.5" /> Szablony dnia</div>

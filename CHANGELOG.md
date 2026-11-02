@@ -2,6 +2,12 @@
 
 Numer wersji widać w aplikacji (menu → „Co nowego”). Format: `główna.funkcje.poprawki`.
 
+## 1.1.1 – 2026-11-02 – Wydruk jak w arkuszu, poprawki Pulpitu
+
+- **Ulepszone:** Wydruk / PDF w układzie dotychczasowego arkusza: tytuł na każdej stronie, licznik wyjazd/przyjazd w dwóch liniach, linie między dniami, „Strona X z Y” i podpis podatnika. Dane firmy i pojazdu można dołączyć jednym kliknięciem.
+- **Poprawione:** Pasek dni na Pulpicie przewija się za wybraną datą – przy klikaniu strzałek dzień nie znika z widoku.
+- **Poprawione:** Na Pulpicie widać wszystkie stałe trasy naraz: najpierw te z miejsca, w którym stoi auto, potem pozostałe.
+
 ## 1.1.0 – 2026-11-01 – Przebieg z FV Meter, przypomnienie o zamknięciu miesiąca, osobne konta
 
 - **Nowe:** Przebieg Tesli wpisywany w FV Meter pobiera się sam do kontroli licznika – nie trzeba go przepisywać (Ustawienia → Przebieg z FV Meter).
