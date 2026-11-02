@@ -1,6 +1,6 @@
 import { Archive, ArchiveRestore, ArrowDown, ArrowLeftRight, ArrowUp, Layers, MapPin, Pencil, Plus, Route as RouteIcon, Sparkles, Trash2, X } from "lucide-react";
 import { useMemo, useState } from "react";
-import { Place, ROUTE_COLORS, routeColor, RouteLine } from "../components/trips";
+import { MapsLink, Place, ROUTE_COLORS, routeColor, RouteLine } from "../components/trips";
 import { Badge, Card, Combobox, cx, EmptyState, Field, Modal, NumberInput, PageHeader, useAction } from "../components/ui";
 import { samePlace } from "../engine/ledger";
 import { knownPlaces, knownPurposes, returnPurpose, routeProposals, routeUsage } from "../engine/suggest";
@@ -182,7 +182,7 @@ export function RoutesPage() {
             </Field>
             <Field label="Skąd"><Combobox value={editing.origin} onChange={(origin) => setEditing({ ...editing, origin })} options={places} /></Field>
             <Field label="Dokąd"><Combobox value={editing.destination} onChange={(destination) => setEditing({ ...editing, destination })} options={places} /></Field>
-            <Field label="Kilometry">
+            <Field label="Kilometry" hint={<MapsLink origin={editing.origin} destination={editing.destination} />}>
               <NumberInput value={editing.km || null} onChange={(v) => setEditing({ ...editing, km: v ?? 0 })} suffix="km" />
             </Field>
             <div>

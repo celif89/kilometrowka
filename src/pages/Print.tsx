@@ -1,18 +1,15 @@
-import { ArrowLeft, Printer } from "lucide-react";
+import { ArrowLeft, FileSpreadsheet, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { Spinner } from "../components/ui";
 import { buildLedger, type LedgerTrip, monthSummaries } from "../engine/ledger";
+import { saveSettings } from "../lib/data";
 import { useData } from "../lib/DataContext";
-import { dayLabel, monthGenitive, monthOnly, num } from "../lib/format";
+import { downloadBlob, exportLedgerXlsx } from "../lib/exportXlsx";
+import { PRINT_FONTS, PRINT_HEADER_KEY, printFont, printHeaderEnabled } from "../lib/fonts";
+import { dayLabel, monthGenitive, monthOnly, num, odo } from "../lib/format";
 
-const HEADER_KEY = "km.printHeader";
 
-/** „46 153”, „8 671” – grupowanie jak w arkuszu (także dla liczb czterocyfrowych). */
-export function odo(v: number): string {
-  const [int, frac] = String(Math.round(v * 10) / 10).split(".");
-  return int.replace(/\B(?=(\d{3})+(?!\d))/g, " ") + (frac ? `,${frac}` : "");
-}
 
 const U = ({ children }: { children: React.ReactNode }) => <span className="underline underline-offset-2">{children}</span>;
 
@@ -21,11 +18,12 @@ const LINE = "1px solid #000";
 
 export function PrintPage() {
   const { vehicleId, from, to } = useParams();
-  const { data, company } = useData();
+  const { data, company, reload } = useData();
   const vehicle = data?.vehicles.find((v) => v.id === Number(vehicleId));
-  const [withHeader, setWithHeader] = useState(() => {
-    try { return localStorage.getItem(HEADER_KEY) === "1"; } catch { return false; }
-  });
+  const [withHeader, setWithHeader] = useState(printHeaderEnabled);
+  // czcionka zapisana w ustawieniach konta – ta sama na każdym urządzeniu i w eksporcie do Excela
+  const [fontId, setFontId] = useState<string | null>(null);
+  const font = printFont(fontId ?? data?.settings.print_font);
 
   useEffect(() => {
     document.title = vehicle ? `Ewidencja ${vehicle.plate} ${from === to ? from : `${from} – ${to}`}` : "Ewidencja";
@@ -41,16 +39,34 @@ export function PrintPage() {
 
   return (
     <div className="min-h-dvh bg-slate-200 py-6 print:bg-white print:py-0 dark:bg-ink-950">
+      {/* stopka „Strona X z Y” tą samą czcionką co wydruk */}
+      <style>{`@page { @bottom-center { font-family: ${font.css}; } }`}</style>
       <div className="no-print mx-auto mb-5 flex max-w-[210mm] flex-wrap items-center justify-between gap-3 px-4">
         <Link to={`/ewidencja/${from}`} className="btn btn-secondary"><ArrowLeft className="size-4" /> Wróć</Link>
         <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
           <input type="checkbox" className="size-4 accent-brand-600" checked={withHeader} onChange={(e) => {
             setWithHeader(e.target.checked);
-            try { localStorage.setItem(HEADER_KEY, e.target.checked ? "1" : "0"); } catch { /* */ }
+            try { localStorage.setItem(PRINT_HEADER_KEY, e.target.checked ? "1" : "0"); } catch { /* */ }
           }} />
           Dane firmy i pojazdu nad tabelą
         </label>
-        <button className="btn btn-primary" onClick={() => window.print()}><Printer className="size-4" /> Drukuj / PDF</button>
+        <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
+          Czcionka
+          <select className="input w-44 py-1.5 text-sm" value={font.id} style={{ fontFamily: font.css }}
+            onChange={async (e) => {
+              setFontId(e.target.value);
+              try { await saveSettings({ print_font: e.target.value }); await reload(); } catch { /* zostaje wybór lokalny */ }
+            }}>
+            {PRINT_FONTS.map((f) => <option key={f.id} value={f.id} style={{ fontFamily: f.css }}>{f.label}</option>)}
+          </select>
+        </label>
+        <div className="flex gap-2">
+          <button className="btn btn-secondary" onClick={() => downloadBlob(exportLedgerXlsx(company, vehicle, months, { font, withHeader }),
+            `Ewidencja_${vehicle.plate.replace(/\s/g, "")}_${from === to ? from : `${from}_${to}`}.xlsx`)}>
+            <FileSpreadsheet className="size-4" /> Excel
+          </button>
+          <button className="btn btn-primary" onClick={() => window.print()}><Printer className="size-4" /> Drukuj / PDF</button>
+        </div>
         <p className="w-full text-center text-xs text-slate-500">
           W oknie drukowania wybierz „Zapisz jako PDF”, a w „Więcej ustawień” odznacz „Nagłówki i stopki”.
         </p>
@@ -65,7 +81,7 @@ export function PrintPage() {
         }
         return (
           <article key={m.month} className="print-page mx-auto mb-6 w-full max-w-[210mm] bg-white px-[14mm] py-[10mm] text-black shadow-xl"
-            style={{ fontFamily: "Calibri, Carlito, 'Segoe UI', Arial, sans-serif", fontSize: "10.5pt", lineHeight: 1.25 }}>
+            style={{ fontFamily: font.css, fontSize: "10.5pt", lineHeight: 1.25 }}>
             <table className="print-table w-full table-fixed border-collapse" style={{ fontSize: "9.5pt" }}>
               <colgroup>
                 <col style={{ width: "7.8%" }} /><col style={{ width: "10.3%" }} /><col style={{ width: "11.9%" }} /><col style={{ width: "28.3%" }} />

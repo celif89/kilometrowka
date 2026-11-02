@@ -16,7 +16,8 @@ Zastępuje arkusz `Ewidencja_pojazdu.xlsx` i działa tak jak FV Meter: React + S
 | — | **propozycje stałych tras** z przejazdów, które się powtarzają |
 | — | podpowiedzi miejsc, celów i kilometrów z historii |
 | odczyty licznika wpisywane z boku (K–L) | **kontrola licznika**: faktyczny odczyt vs. ewidencja; przebieg z **FV Meter** pobiera się sam |
-| drukowanie arkusza | **wydruk / PDF** każdego miesiąca w tym samym układzie, z miejscem na podpis, oraz **eksport do Excela** |
+| drukowanie arkusza | **wydruk / PDF** i **eksport do Excela** w tym samym układzie co arkusz (dzień nigdy nie jest dzielony między strony), z wyborem czcionki |
+| sprawdzanie km na mapie | przycisk **„Sprawdź km w Google Maps”** przy wpisywaniu trasy |
 | — | **zatwierdzanie miesięcy** – po podpisaniu nie da się przypadkiem zmienić wpisów; od 1. dnia miesiąca przypomnienie o poprzednim |
 | — | **osobne konta** – każde ma własne dane (np. żona z własnym autem) |
 | — | **kopia zapasowa** całych danych do pliku |

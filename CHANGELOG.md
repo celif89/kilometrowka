@@ -2,6 +2,13 @@
 
 Numer wersji widać w aplikacji (menu → „Co nowego”). Format: `główna.funkcje.poprawki`.
 
+## 1.2.0 – 2026-11-02 – Excel jak wydruk, wybór czcionki, Google Maps
+
+- **Nowe:** Eksport do Excela w układzie wydruku: przejazd w dwóch wierszach z licznikiem wyjazd/przyjazd, linie między dniami, tytuł w nagłówku i „Strona X z Y” w stopce, podział stron tylko między dniami.
+- **Nowe:** Wybór czcionki wydruku i eksportu: Calibri, Arial, Arial Narrow, Times New Roman, Tahoma (zapamiętywany w ustawieniach konta).
+- **Nowe:** Przy wpisywaniu przejazdu i stałej trasy: przycisk „Sprawdź km w Google Maps” otwiera trasę skąd → dokąd (na telefonie w aplikacji Mapy).
+- **Ulepszone:** Na stronie wydruku można od razu pobrać Excel z tymi samymi ustawieniami.
+
 ## 1.1.2 – 2026-11-02 – Poprawki wydruku
 
 - **Poprawione:** Wydruk: dzień nie jest już dzielony między strony – każda strona kończy się pełnym dniem.

@@ -62,3 +62,9 @@ export function plural(n: number, one: string, few: string, many: string): strin
 }
 
 export const trips = (n: number) => plural(n, "przejazd", "przejazdy", "przejazdów");
+
+/** „46 153”, „8 671” – grupowanie tysięcy jak w arkuszu (także dla liczb czterocyfrowych), bez łamania linii. */
+export function odo(v: number): string {
+  const [int, frac] = String(Math.round(v * 10) / 10).split(".");
+  return int.replace(/\B(?=(\d{3})+(?!\d))/g, "\u00a0") + (frac ? `,${frac}` : "");
+}

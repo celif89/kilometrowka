@@ -8,6 +8,7 @@ import { odometerAt } from "../engine/ledger";
 import { deleteReading, saveReading } from "../lib/data";
 import { useData } from "../lib/DataContext";
 import { downloadBlob, exportLedgerXlsx } from "../lib/exportXlsx";
+import { printFont, printHeaderEnabled } from "../lib/fonts";
 import { dayLabel, km, monthName, monthShort, num, signedKm, trips as tripsWord } from "../lib/format";
 
 function Bars({ items }: { items: { label: string; value: number; to?: string; muted?: boolean }[] }) {
@@ -95,7 +96,7 @@ export function ReportsPage() {
           <Segmented value={year} onChange={setYear} options={yearList.map((y) => ({ value: y, label: y }))} />
           <Link className="btn btn-secondary" to={`/druk/${vehicle.id}/${ym[0]?.month ?? `${year}-01`}/${ym.at(-1)?.month ?? `${year}-12`}`} target="_blank"><Printer className="size-4" /> Drukuj rok</Link>
           <button className="btn btn-secondary" disabled={!ym.length}
-            onClick={() => downloadBlob(exportLedgerXlsx(company, vehicle, ym), `Ewidencja_${vehicle.plate.replace(/\s/g, "")}_${year}.xlsx`)}>
+            onClick={() => downloadBlob(exportLedgerXlsx(company, vehicle, ym, { font: printFont(data.settings.print_font), withHeader: printHeaderEnabled() }), `Ewidencja_${vehicle.plate.replace(/\s/g, "")}_${year}.xlsx`)}>
             <FileSpreadsheet className="size-4" /> Excel {year}
           </button>
         </>} />

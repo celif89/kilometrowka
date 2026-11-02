@@ -12,6 +12,17 @@ export const APP_VERSION: string = __APP_VERSION__;
 
 export const RELEASES: Release[] = [
   {
+    version: "1.2.0",
+    date: "2026-11-02",
+    title: "Excel jak wydruk, wybór czcionki, Google Maps",
+    changes: [
+      { kind: "new", text: "Eksport do Excela w układzie wydruku: przejazd w dwóch wierszach z licznikiem wyjazd/przyjazd, linie między dniami, tytuł w nagłówku i „Strona X z Y” w stopce, podział stron tylko między dniami." },
+      { kind: "new", text: "Wybór czcionki wydruku i eksportu: Calibri, Arial, Arial Narrow, Times New Roman, Tahoma (zapamiętywany w ustawieniach konta)." },
+      { kind: "new", text: "Przy wpisywaniu przejazdu i stałej trasy: przycisk „Sprawdź km w Google Maps” otwiera trasę skąd → dokąd (na telefonie w aplikacji Mapy)." },
+      { kind: "improved", text: "Na stronie wydruku można od razu pobrać Excel z tymi samymi ustawieniami." },
+    ],
+  },
+  {
     version: "1.1.2",
     date: "2026-11-02",
     title: "Poprawki wydruku",

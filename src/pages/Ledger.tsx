@@ -8,6 +8,7 @@ import type { LedgerTrip } from "../engine/ledger";
 import { closeMonth, reopenMonth } from "../lib/data";
 import { useData } from "../lib/DataContext";
 import { downloadBlob, exportLedgerXlsx } from "../lib/exportXlsx";
+import { printFont, printHeaderEnabled } from "../lib/fonts";
 import { dateTimeLabel, dayLabel, dayLong, km, monthName, num, trips as tripsWord } from "../lib/format";
 
 export function LedgerPage() {
@@ -85,7 +86,7 @@ export function LedgerPage() {
             </div>
             <Link className="btn btn-secondary" to={`/druk/${vehicle.id}/${month}/${month}`} target="_blank"><Printer className="size-4" /> Drukuj / PDF</Link>
             <button className="btn btn-secondary" disabled={!summary}
-              onClick={() => summary && downloadBlob(exportLedgerXlsx(company, vehicle, [summary]), `Ewidencja_${vehicle.plate.replace(/\s/g, "")}_${month}.xlsx`)}>
+              onClick={() => summary && downloadBlob(exportLedgerXlsx(company, vehicle, [summary], { font: printFont(data.settings.print_font), withHeader: printHeaderEnabled() }), `Ewidencja_${vehicle.plate.replace(/\s/g, "")}_${month}.xlsx`)}>
               <FileSpreadsheet className="size-4" /> Excel
             </button>
             {closed

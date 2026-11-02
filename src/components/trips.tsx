@@ -1,10 +1,11 @@
-import { ArrowDown, ArrowLeftRight, ArrowUp, Lock, MapPin, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { ArrowDown, ArrowLeftRight, ArrowUp, ExternalLink, Lock, Map as MapIcon, MapPin, Pencil, Sparkles, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { isMonthClosed, type LedgerTrip, validateTrip } from "../engine/ledger";
 import { kmForPair, knownDrivers, knownPlaces, knownPurposes, purposeForPair } from "../engine/suggest";
 import type { NewTrip, Route, Trip } from "../engine/types";
 import { deleteTrips, insertTrips, saveRoute, updateTrip } from "../lib/data";
 import { useData } from "../lib/DataContext";
+import { googleMapsRoute } from "../lib/maps";
 import { dayLong, km, num } from "../lib/format";
 import { Combobox, cx, Field, Modal, Notice, NumberInput, useAction } from "./ui";
 
@@ -214,10 +215,15 @@ export function TripForm({ draft, onClose }: { draft: TripDraft | null; onClose:
             <Combobox value={t.destination} onChange={(destination) => placeChanged({ destination })} options={places} placeholder="Miejscowość, ulica" />
           </Field>
         </div>
-        <Field label="Przejechane kilometry" hint={suggestedKm !== null && suggestedKm !== t.km ? (
-          <button type="button" className="inline-flex items-center gap-1 font-medium text-brand-600 dark:text-brand-300"
-            onClick={() => set({ km: suggestedKm })}><Sparkles className="size-3" /> Zwykle {km(suggestedKm)} – użyj</button>
-        ) : undefined}>
+        <Field label="Przejechane kilometry" hint={
+          <span className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+            {suggestedKm !== null && suggestedKm !== t.km ? (
+              <button type="button" className="inline-flex items-center gap-1 font-medium text-brand-600 dark:text-brand-300"
+                onClick={() => set({ km: suggestedKm })}><Sparkles className="size-3" /> Zwykle {km(suggestedKm)} – użyj</button>
+            ) : <span />}
+            <MapsLink origin={t.origin} destination={t.destination} />
+          </span>
+        }>
           <NumberInput value={t.km} onChange={(v) => { autoKm.current = false; set({ km: v }); }} suffix="km" />
         </Field>
         <Field label="Uwagi (opcjonalnie, nie trafiają na wydruk)">
@@ -239,6 +245,20 @@ export function TripForm({ draft, onClose }: { draft: TripDraft | null; onClose:
         <p className="text-xs text-slate-400">{dayLong(t.day, true)}</p>
       </div>
     </Modal>
+  );
+}
+
+/** „Sprawdź km w Google Maps” – otwiera trasę skąd → dokąd w nowej karcie (na telefonie w aplikacji Mapy). */
+export function MapsLink({ origin, destination }: { origin: string; destination: string }) {
+  const ready = origin.trim() !== "" && destination.trim() !== "";
+  if (!ready) {
+    return <span className="inline-flex items-center gap-1 text-slate-400"><MapIcon className="size-3" /> Wpisz skąd i dokąd, by sprawdzić km w Google Maps</span>;
+  }
+  return (
+    <a href={googleMapsRoute(origin, destination)} target="_blank" rel="noopener noreferrer"
+      className="inline-flex items-center gap-1.5 rounded-full border border-road-500/30 bg-road-400/10 px-2.5 py-1 font-semibold text-road-600 transition hover:bg-road-400/20 dark:text-road-400">
+      <MapIcon className="size-3" /> Sprawdź km w Google Maps <ExternalLink className="size-3" />
+    </a>
   );
 }
 
