@@ -12,7 +12,7 @@ Zastępuje arkusz `Ewidencja_pojazdu.xlsx` i działa tak jak FV Meter: React + S
 |---|---|
 | numer wpisu i stan licznika liczone formułami (łatwo o złe odwołanie) | liczą się same z sumy kilometrów, zawsze ciągle |
 | lista tras w kolumnach S–W + `WYSZUKAJ.PIONOWO` po numerze | **stałe trasy** – jedno kliknięcie dodaje przejazd; najpierw podpowiadane są trasy z miejsca, w którym auto stoi |
-| kopiowanie wierszy dzień po dniu | **szablony dnia** (np. dom → biuro → dom) i **„Powtórz dzień”** |
+| kopiowanie wierszy dzień po dniu | **„Kopiuj”** przy dniu – na jeden lub kilka dni naraz, **szablony dnia** (np. dom → biuro → dom) i **„Powtórz dzień”** |
 | — | **propozycje stałych tras** z przejazdów, które się powtarzają |
 | — | podpowiedzi miejsc, celów i kilometrów z historii |
 | odczyty licznika wpisywane z boku (K–L) | **kontrola licznika**: faktyczny odczyt vs. ewidencja; przebieg z **FV Meter** pobiera się sam |

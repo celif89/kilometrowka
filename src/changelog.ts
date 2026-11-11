@@ -12,6 +12,15 @@ export const APP_VERSION: string = __APP_VERSION__;
 
 export const RELEASES: Release[] = [
   {
+    version: "1.3.0",
+    date: "2026-11-11",
+    title: "Kopiowanie dnia na inne dni",
+    changes: [
+      { kind: "new", text: "Kopiowanie dnia: przycisk „Kopiuj” przy każdym dniu w Ewidencji (i „Kopiuj na inne dni” na Pulpicie) kopiuje przejazdy na wybrane dni – można zaznaczyć kilka dni w kalendarzu i wybrać, które przejazdy skopiować." },
+      { kind: "improved", text: "Kopie dopisują się na koniec dni, które mają już przejazdy (kalendarz je oznacza); dni w zatwierdzonych miesiącach są zablokowane, a całość można cofnąć jednym kliknięciem." },
+    ],
+  },
+  {
     version: "1.2.1",
     date: "2026-11-02",
     title: "Literówki w adresach, nazwy miejsc w formularzu, Google Maps",

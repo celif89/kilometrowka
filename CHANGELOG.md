@@ -2,6 +2,11 @@
 
 Numer wersji widać w aplikacji (menu → „Co nowego”). Format: `główna.funkcje.poprawki`.
 
+## 1.3.0 – 2026-11-11 – Kopiowanie dnia na inne dni
+
+- **Nowe:** Kopiowanie dnia: przycisk „Kopiuj” przy każdym dniu w Ewidencji (i „Kopiuj na inne dni” na Pulpicie) kopiuje przejazdy na wybrane dni – można zaznaczyć kilka dni w kalendarzu i wybrać, które przejazdy skopiować.
+- **Ulepszone:** Kopie dopisują się na koniec dni, które mają już przejazdy (kalendarz je oznacza); dni w zatwierdzonych miesiącach są zablokowane, a całość można cofnąć jednym kliknięciem.
+
 ## 1.2.1 – 2026-11-02 – Literówki w adresach, nazwy miejsc w formularzu, Google Maps
 
 - **Poprawione:** Adresy różniące się tylko polskimi znakami, kropkami lub wielkością liter (np. „Mlyńska” i „Młyńska”) są traktowane jako to samo miejsce – znika fałszywe ostrzeżenie „poprzedni przejazd skończył się w…”, działa nazwa miejsca i podpowiedź km.

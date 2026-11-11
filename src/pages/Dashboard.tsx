@@ -1,6 +1,7 @@
-import { CalendarDays, ChevronLeft, ChevronRight, FileSpreadsheet, Layers, Lock, MapPin, Plus, Repeat, Route as RouteIcon, Settings2} from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight, Copy, FileSpreadsheet, Layers, Lock, MapPin, Plus, Repeat, Route as RouteIcon, Settings2} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { CopyDayModal } from "../components/CopyDay";
 import { MonthReminder } from "../components/MonthReminder";
 import { DayTimeline, nextSeq, Place, RouteChip, type TripDraft, TripForm, tripFromRoute } from "../components/trips";
 import { Badge, Card, cx, EmptyState, Modal, Notice, useAction } from "../components/ui";
@@ -80,6 +81,7 @@ export function Dashboard() {
   const [day, setDay] = useState(todayLocal());
   const [draft, setDraft] = useState<TripDraft | null>(null);
   const [repeatOpen, setRepeatOpen] = useState(false);
+  const [copySrc, setCopySrc] = useState<LedgerTrip[] | null>(null);
 
   if (!data) return null;
   if (!vehicle) {
@@ -218,6 +220,9 @@ export function Dashboard() {
                   {carAt ? <Place address={carAt} className="font-medium" /> : <span className="text-slate-400">—</span>}
                 </div>
                 <div className="flex gap-1.5">
+                  {dayTrips.length > 0 && (
+                    <button className="btn btn-ghost px-3 py-1.5 text-xs" onClick={() => setCopySrc(dayTrips)}><Copy className="size-3.5" /> Kopiuj na inne dni</button>
+                  )}
                   <button className="btn btn-ghost px-3 py-1.5 text-xs" onClick={() => setRepeatOpen(true)}><Repeat className="size-3.5" /> Powtórz dzień</button>
                   <Link to="/trasy" className="btn btn-ghost px-3 py-1.5 text-xs"><Settings2 className="size-3.5" /> Trasy</Link>
                 </div>
@@ -288,6 +293,7 @@ export function Dashboard() {
       </div>
 
       <TripForm draft={draft} onClose={() => setDraft(null)} />
+      <CopyDayModal source={copySrc} onClose={() => setCopySrc(null)} />
       <RepeatDay open={repeatOpen} onClose={() => setRepeatOpen(false)} day={day} ledger={ledger}
         onPick={async (src) => {
           let seq = nextSeq(ledger, day);

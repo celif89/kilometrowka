@@ -1,6 +1,7 @@
-import { ChevronLeft, ChevronRight, FileSpreadsheet, Lock, LockOpen, NotebookPen, Plus, Printer, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Copy, FileSpreadsheet, Lock, LockOpen, NotebookPen, Plus, Printer, Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
+import { CopyDayModal } from "../components/CopyDay";
 import { Place, type TripDraft, TripForm } from "../components/trips";
 import { Badge, Card, cx, EmptyState, PageHeader, Stat, useAction } from "../components/ui";
 import { addMonths, monthOf, todayLocal } from "../engine/dates";
@@ -18,6 +19,7 @@ export function LedgerPage() {
   const { busy, run } = useAction(reload);
   const [draft, setDraft] = useState<TripDraft | null>(null);
   const [q, setQ] = useState("");
+  const [copySrc, setCopySrc] = useState<LedgerTrip[] | null>(null);
 
   const month = param && /^\d{4}-\d{2}$/.test(param) ? param : monthOf(todayLocal());
   const summary = months.find((m) => m.month === month);
@@ -43,6 +45,8 @@ export function LedgerPage() {
   const last = months.at(-1)?.month ?? month;
   const closed = summary?.closed;
   const go = (m: string) => nav(`/ewidencja/${m}`);
+  // kopiujemy cały dzień (także przejazdy ukryte przez wyszukiwanie)
+  const copyDay = (day: string) => setCopySrc((summary?.trips ?? []).filter((t) => t.day === day));
   const edit = (t: LedgerTrip) => setDraft({ id: t.id, day: t.day, purpose: t.purpose, origin: t.origin, destination: t.destination, km: t.km, driver: t.driver, note: t.note ?? "", route_id: t.route_id });
   const add = () => {
     const today = todayLocal();
@@ -118,7 +122,13 @@ export function LedgerPage() {
                   {byDay.map(([day, trips]) => trips.map((t, i) => (
                     <tr key={t.id} onClick={() => !closed && edit(t)} className={cx(!closed && "cursor-pointer", i === 0 && "border-t-2 border-slate-100 dark:border-white/5")}>
                       <td className="text-center font-mono text-xs text-slate-400">{t.no}</td>
-                      <td className="whitespace-nowrap">{i === 0 && <span className="font-medium">{dayLabel(day)}</span>}</td>
+                      <td className="whitespace-nowrap">{i === 0 && (
+                        <span className="flex items-center gap-1.5">
+                          <span className="font-medium">{dayLabel(day)}</span>
+                          <button className="btn btn-ghost h-7 gap-1 rounded-lg px-1.5 text-xs text-slate-500 hover:text-brand-600" title="Kopiuj ten dzień na inne dni"
+                            onClick={(e) => { e.stopPropagation(); copyDay(day); }}><Copy className="size-3.5" /> Kopiuj</button>
+                        </span>
+                      )}</td>
                       <td className="text-slate-600 dark:text-slate-300">{t.purpose}</td>
                       <td>
                         <div className="flex flex-wrap items-center gap-x-1.5">
@@ -140,7 +150,12 @@ export function LedgerPage() {
                 <div key={day}>
                   <div className="mb-1.5 flex items-baseline justify-between px-1">
                     <span className="text-sm font-semibold first-letter:uppercase">{dayLong(day)}</span>
-                    <span className="text-xs text-slate-500 tnum">{km(trips.reduce((a, t) => a + t.km, 0))}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs text-slate-500 tnum">{km(trips.reduce((a, t) => a + t.km, 0))}</span>
+                      <button className="btn btn-ghost h-7 gap-1 rounded-lg px-2 text-xs text-brand-600" onClick={() => copyDay(day)}>
+                        <Copy className="size-3.5" /> Kopiuj
+                      </button>
+                    </span>
                   </div>
                   <div className="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-100 dark:divide-white/5 dark:border-white/5">
                     {trips.map((t) => (
@@ -166,6 +181,7 @@ export function LedgerPage() {
       </Card>
 
       <TripForm draft={draft} onClose={() => setDraft(null)} />
+      <CopyDayModal source={copySrc} onClose={() => setCopySrc(null)} />
     </div>
   );
 }
